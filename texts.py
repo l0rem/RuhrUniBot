@@ -12,7 +12,8 @@ help_phrase = '''<b>List of supported commands:</b>
 /times - Get opening hours of Mensa
 /map - Get map of RUB
 /fristen_w - Get fristen for Wintersemester
-/fristen_s - Get fristen for Sommersemester'''
+/fristen_s - Get fristen for Sommersemester
+/source - Get source code of bot'''
 
 
 explanation = '''Here are Inhaltsstoffe:
