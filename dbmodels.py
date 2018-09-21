@@ -1,19 +1,13 @@
+# -*- coding: utf-8 -*-
+
 from peewee import *
-from playhouse.sqliteq import SqliteQueueDatabase
 
-db1 = SqliteQueueDatabase(
-    'base.db',
-    autostart=True,
-    queue_max_size=128,
-    results_timeout=5.0
-)
-
-db = SqliteDatabase(
+db = SqliteDatabase(                                            # initializing database instance
     'base.db'
 )
 
 
-class Menu(Model):
+class Menu(Model):                                              # creating db-model for food menu
     date = TextField()
     tipp = TextField(default='[]')
     komponentenessen = TextField(default='[]')
@@ -25,3 +19,22 @@ class Menu(Model):
     class Meta:
         database = db
         table_name = 'Menus'
+
+
+class Subdata(Model):                                           # creating db-model for additional data
+    name = TextField()
+    fid = TextField()
+
+    class Meta:
+        database = db
+        table_name = 'Subdata'
+
+
+class Notify(Model):
+    cid = IntegerField()                                        # creating db-model for notifications
+    time = TextField()
+    res = TextField()
+
+    class Meta:
+        database = db
+        table_name = 'Notifications'

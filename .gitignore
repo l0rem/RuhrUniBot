@@ -1,5 +1,7 @@
 __pycache__
 .idea
 warden.session
+base.db
 base.db-shm
 base.db-wal
+.gitignore

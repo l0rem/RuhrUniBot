@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
+
 import logging
 from telegram.ext import run_async
-from telegram.ext import CommandHandler, MessageHandler
+from telegram.ext import CommandHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram import ParseMode
 import datetime
-from secrets import*
 import requests
 from dbmodels import *
 import json
+from texts import *
 from bs4 import BeautifulSoup
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -86,21 +88,24 @@ def mensa_handler(bot, update):
 
             msg += '\n'
         menu.save()
-    bot.send_message(cid,
-                     msg,
-                     parse_mode=ParseMode.HTML)
+    bot.send_message(
+        cid,
+        msg,
+        parse_mode=ParseMode.HTML
+    )
 
 
 mensa_h = CommandHandler('mensa', mensa_handler)
 
 
-def get_mensa(link=url):
+def get_mensa(link='https://el.rub.de/mobile/mensa/'):
     r = requests.get(link)
     soup = BeautifulSoup(r.text, 'html.parser')
     essen = soup.find('div', id='alles')
     divs = essen.find_all('div')
     types = list()
     food = list()
+
     for div in divs:
         if div['id'] == 'head':
             types.append(div.next.next)
@@ -118,12 +123,13 @@ def get_mensa(link=url):
 
 
 def get_times():
-    r = requests.get(url)
+    r = requests.get('https://el.rub.de/mobile/mensa/')
     soup = BeautifulSoup(r.text, 'html.parser')
     time = soup.find('div', id='zeiten')
     divs = time.find_all('div')
     bs = list()
     ts = list()
+
     for div in divs:
         if div['id'] == 'head':
             bs.append(div.next.next)
@@ -138,38 +144,23 @@ def get_times():
 @run_async
 def times_handler(bot, update):
     cid = update.effective_message.chat.id
-    #msg = 'Öffnungszeiten for today:\n\n'
-    #times = get_times()
-    #for time in times:
-    #    msg += '<b>{}</b>\n'.format(time)
-    #    msg += '<i>{}</i>'.format(times.get(time))
-    #    msg += '\n\n'
-    bot.send_message(cid,
-                     times,
-                     parse_mode=ParseMode.HTML)
+    bot.send_message(
+        cid,
+        times,
+        parse_mode=ParseMode.HTML
+    )
 
 
 times_h = CommandHandler('times', times_handler)
 
 
-@run_async
-def voronezh_handler(bot, update):
-    cid = update.effective_message.chat.id
-    bot.send_photo(cid,
-                   fid,
-                   caption='<b>VORONEZH\' NE DOGONISH!</b>',
-                   parse_mode=ParseMode.HTML)
-
-
-voronezh_h = CommandHandler('voronezh', voronezh_handler)
-
-
 def get_explains():
-    r = requests.get(url)
+    r = requests.get('https://el.rub.de/mobile/mensa/')
     soup = BeautifulSoup(r.text, 'html.parser')
     explains = soup.find('div', id='stoffe')
     divs = explains.find_all('div')
     explains = dict()
+
     for div in divs:
         txt = div.next
         shrt = txt.split(':')[0]
@@ -181,86 +172,24 @@ def get_explains():
 @run_async
 def explain_handler(bot, update):
     cid = update.effective_message.chat.id
-    #msg = 'Here are Inhaltsstoffe:\n\n'
-    #exp = get_explains()
-    #f  or e in exp:
-    #    msg += '<b>{}:</b> {}\n'.format(e, exp.get(e))
-
-    bot.send_message(cid,
-                     explanation,
-                     parse_mode=ParseMode.HTML)
+    bot.send_message(
+        cid,
+        explanation,
+        parse_mode=ParseMode.HTML
+    )
 
 
 explain_h = CommandHandler('explain', explain_handler)
-
-
-explain_h = CommandHandler('explain', explain_handler)
-
-
-@run_async
-def menser(bot, job):
-    bot.send_message(qcid,
-                     '<code>Good morning, chat!</code>',
-                     parse_mode=ParseMode.HTML)
-    food = get_mensa()
-    msg = '<i>Food in Mensa for today:\n\n</i>'
-    for elem in food:
-        msg += '<b>{}</b    >\n'.format(elem)
-        for sp in food.get(elem):
-            price = sp.split('|||')[1].split('/')[0]
-            msg += '{} - <code>{}</code>\n'.format(sp.split('|||')[0], price)
-        msg += '\n'
-
-    bot.send_message(qcid,
-                     msg,
-                     parse_mode=ParseMode.HTML)
-
-
-@run_async
-def tomorrower(bot, job):
-    weekday = datetime.datetime.today().weekday()
-    if weekday >= 5:
-        bot.send_message(qcid,
-                         '<code>Hey there!</code>\nTheres no food for tomorrow :(',
-                         parse_mode=ParseMode.HTML)
-        return
-    else:
-        weekday += 2
-    link = 'https://el.rub.de/mobile/mensa/index.php?tag={}'.format(weekday)
-    bot.send_message(qcid,
-                     '<code>Good evening, chat!</code>',
-                     parse_mode=ParseMode.HTML)
-    food = get_mensa(link)
-    msg = '<i>Food in Mensa for tomorrow:\n\n</i>'
-    for elem in food:
-        msg += '<b>{}</b    >\n'.format(elem)
-        for sp in food.get(elem):
-            price = sp.split('|||')[1].split('/')[0]
-            msg += '{} - <code>{}</code>\n'.format(sp.split('|||')[0], price)
-        msg += '\n'
-
-    bot.send_message(qcid,
-                     msg,
-                     parse_mode=ParseMode.HTML)
-
-
-@run_async
-def test_handler(bot, update):
-    cid = update.effective_message.chat.id
-    print(update)
-
-
-test_h = MessageHandler(callback=test_handler, filters=())
 
 
 @run_async
 def start_handler(bot, update):
     cid = update.effective_message.chat.id
-    bot.send_message(cid,
-                     '<b>Hey!\n</b>This is bot for Ruhr University of Bochum. '
-                     'Its alternative to RUB Mobile und rub.de .\n'
-                     'To get list of supported commands use /help .',
-                     parse_mode=ParseMode.HTML)
+    bot.send_message(
+        cid,
+        start_phrase,
+        parse_mode=ParseMode.HTML
+    )
 
 
 start_h = CommandHandler('start', start_handler)
@@ -271,14 +200,7 @@ def help_handler(bot, update):
     cid = update.effective_message.chat.id
     bot.send_message(
         cid,
-        '<b>List of supported commands:</b>\n'
-        '/mensa - Get menu in RUBMensa for today\n'
-        '/tomorrow - Get menu in RUBMensa for tomorrow\n'
-        '/explain - Get explanations for Mensa menu\n'
-        '/times - Get opening hours of Mensa\n'
-        '/map - Get map of RUB\n'
-        '/fristen_w - Get fristen for Wintersemester\n'
-        '/fristen_s - Get fristen for Sommersemester\n',
+        help_phrase,
         parse_mode=ParseMode.HTML
     )
 
@@ -289,30 +211,57 @@ help_h = CommandHandler('help', help_handler)
 @run_async
 def map_handler(bot, update):
     cid = update.effective_message.chat.id
-    bot.send_photo(cid,
-                   rub_map,
-                   caption='By @RuhrUniBot')
+    mp = Subdata.select().where(Subdata.name == 'map')
+
+    if mp.exists():
+        mp = Subdata.get(Subdata.name == 'map')
+        fid = mp.fid
+        bot.send_photo(
+            cid,
+            fid,
+            caption='By @RuhrUniBot'
+        )
+    else:
+        m = bot.send_photo(
+            cid,
+            'https://www.ruhr-uni-bochum.de/anreise/images/RUB-Lageplan_en-1200.jpg',
+            caption='By @RuhrUniBot'
+        )
+        fid = m.photo[-1].file_id
+        Subdata.create(
+             name='map',
+             fid=fid
+        )
 
 
 map_h = CommandHandler('map', map_handler)
-
-
-def get_fristen():
-    url = 'https://www.ruhr-uni-bochum.de/studierendensekretariat/studium/fristen.html.de'
-    r = requests.get(url)
-    soup = BeautifulSoup(r.text, 'html.parser')
-    print(soup.find('table'))
 
 
 @run_async
 def fristenw_handler(bot, update):
     cid = update.effective_message.chat.id
     msg = '<b>Fristen for Wintersemester</b>'
-    bot.send_document(cid,
-                      fristen_w,
-                      filename='Fristen Wintersemester 18/19',
-                      caption=msg,
-                      parse_mode=ParseMode.HTML)
+    fristen_w = Subdata.select().where(Subdata.name == 'fristen_w')
+    if fristen_w.exists():
+        fristen_w = Subdata.get(Subdata.name == 'fristen_w')
+        bot.send_document(
+            cid,
+            fristen_w.fid,
+            caption=msg,
+            parse_mode=ParseMode.HTML
+        )
+    else:
+        m = bot.send_document(
+            cid,
+            'https://www.ruhr-uni-bochum.de/imperia/md/content/dezergba/studierendensekretariat/fristen_2017_2.pdf',
+            caption=msg,
+            parse_mode=ParseMode.HTML
+        )
+        fid = m.document.file_id
+        Subdata.create(
+            name='fristen_w',
+            fid=fid
+        )
 
 
 fristenw_h = CommandHandler('fristen_w', fristenw_handler)
@@ -322,11 +271,28 @@ fristenw_h = CommandHandler('fristen_w', fristenw_handler)
 def fristens_handler(bot, update):
     cid = update.effective_message.chat.id
     msg = '<b>Fristen for Sommersemester</b>'
-    bot.send_document(cid,
-                      fristen_s,
-                      filename='Fristen Sommersemester 18',
-                      caption=msg,
-                      parse_mode=ParseMode.HTML)
+    fristen_s = Subdata.select().where(Subdata.name == 'fristen_s')
+
+    if fristen_s.exists():
+        fristen_s = Subdata.get(Subdata.name == 'fristen_s')
+        bot.send_document(
+            cid,
+            fristen_s.fid,
+            caption=msg,
+            parse_mode=ParseMode.HTML
+        )
+    else:
+        m = bot.send_document(
+            cid,
+            'https://www.ruhr-uni-bochum.de/imperia/md/content/dezergba/studierendensekretariat/fristen20181.pdf',
+            caption=msg,
+            parse_mode=ParseMode.HTML
+        )
+        fid = m.document.file_id
+        Subdata.create(
+            name='fristen_s',
+            fid=fid
+        )
 
 
 fristens_h = CommandHandler('fristen_s', fristens_handler)
@@ -337,15 +303,19 @@ def tomorrow_handler(bot, update):
     cid = update.effective_message.chat.id
     weekday = datetime.datetime.today().weekday()
     if weekday >= 5:
-        bot.send_message(cid,
-                         '<code>Hey there!</code>\nTheres no food for tomorrow :(',
-                         parse_mode=ParseMode.HTML)
+        bot.send_message(
+            cid,
+            '<code>Hey there!</code>\nTheres no food for tomorrow :(',
+            parse_mode=ParseMode.HTML
+        )
         return
     else:
         weekday += 2
+
     link = 'https://el.rub.de/mobile/mensa/index.php?tag={}'.format(weekday)
     food = get_mensa(link)
     msg = '<i>Food in Mensa for tomorrow:\n\n</i>'
+
     for elem in food:
         msg += '<b>{}</b>\n'.format(elem)
         for sp in food.get(elem):
@@ -353,12 +323,31 @@ def tomorrow_handler(bot, update):
             msg += '{} - <code>{}</code>\n'.format(sp.split('|||')[0], price)
         msg += '\n'
 
-    bot.send_message(cid,
-                     msg,
-                     parse_mode=ParseMode.HTML)
+    bot.send_message(
+        cid,
+        msg,
+        parse_mode=ParseMode.HTML
+    )
 
 
 tomorrow_h = CommandHandler('tomorrow', tomorrow_handler)
+
+
+@run_async
+def source_handler(bot, update):
+    cid = update.effective_message.chat.id
+    button = InlineKeyboardButton('GitHub', url='https://github.com/l0rem/RuhrUniBot')
+    markup = InlineKeyboardMarkup([[button]])
+    bot.send_message(
+        cid,
+        '''This bot was written by @Lor3m in <code>Python3</code> with <code>python-telegram-bot</code>.
+You can find soucre code on GitHub.''',
+        parse_mode=ParseMode.HTML,
+        reply_markup=markup
+    )
+
+
+source_h = CommandHandler('source', source_handler)
 
     
 
