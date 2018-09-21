@@ -2,8 +2,9 @@
 
 import logging
 from telegram.ext import run_async
-from telegram.ext import CommandHandler
+from telegram.ext import CommandHandler, RegexHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram import ParseMode
 import datetime
 import requests
@@ -24,7 +25,6 @@ def error(bot, update, err):
 
 @run_async
 def mensa_handler(bot, update):
-    Menu.create_table()
     cid = update.effective_message.chat.id
     msg = '<i>Food in Mensa for today:\n\n</i>'
     today = str(datetime.datetime.today()).split(' ')[0]
@@ -122,25 +122,6 @@ def get_mensa(link='https://el.rub.de/mobile/mensa/'):
     return end
 
 
-def get_times():
-    r = requests.get('https://el.rub.de/mobile/mensa/')
-    soup = BeautifulSoup(r.text, 'html.parser')
-    time = soup.find('div', id='zeiten')
-    divs = time.find_all('div')
-    bs = list()
-    ts = list()
-
-    for div in divs:
-        if div['id'] == 'head':
-            bs.append(div.next.next)
-        elif div['id'] == 'content':
-            ts.append(div.next)
-    end = dict()
-    for elem in bs:
-        end.update({elem: ts[bs.index(elem)]})
-    return end
-
-
 @run_async
 def times_handler(bot, update):
     cid = update.effective_message.chat.id
@@ -152,21 +133,6 @@ def times_handler(bot, update):
 
 
 times_h = CommandHandler('times', times_handler)
-
-
-def get_explains():
-    r = requests.get('https://el.rub.de/mobile/mensa/')
-    soup = BeautifulSoup(r.text, 'html.parser')
-    explains = soup.find('div', id='stoffe')
-    divs = explains.find_all('div')
-    explains = dict()
-
-    for div in divs:
-        txt = div.next
-        shrt = txt.split(':')[0]
-        txt = txt.split(':')[1]
-        explains.update({shrt: txt})
-    return explains
 
 
 @run_async
@@ -348,6 +314,184 @@ You can find source code on GitHub.''',
 
 
 source_h = CommandHandler('source', source_handler)
+
+
+@run_async
+def notify_handler(bot, update):
+    cid = update.effective_message.chat.id
+    if cid < 0:
+        bot.send_message(
+            cid,
+            '<b>Sorry, but You cant use this command in groups atm.</b>'
+            'Stay tuned.',
+            parse_mode=ParseMode.HTML
+        )
+        return
+    else:
+        button0 = KeyboardButton('\U000020639:00')
+        button1 = KeyboardButton('\U000020639:30')
+        button2 = KeyboardButton('\U0000206310:00')
+        button3 = KeyboardButton('\U0000206310:30')
+        button4 = KeyboardButton('\U0000206311:00')
+        button5 = KeyboardButton('\U0000206311:30')
+        button6 = KeyboardButton('\U0000206312:00')
+
+        kb = ReplyKeyboardMarkup([[button0, button1],
+                                  [button2, button3],
+                                  [button4, button5],
+                                  [button6]],
+                                 resize_keyboard=True,
+                                 one_time_keyboard=True)
+        bot.send_message(
+            cid,
+            '<b>When would You like to receive notifications about todays menu?</b>\n\n'
+            'Note, that Tagessuppe and Tipp des Tagges appear at about 10:30 - 10:40 a.m.',
+            parse_mode=ParseMode.HTML,
+            reply_markup=kb
+        )
+
+
+notify_h = CommandHandler('notify', notify_handler)
+
+
+@run_async
+def time_handler(bot, update):
+    cid = update.effective_message.chat.id
+    inbase = Notify.select().where(Notify.cid == cid)
+    if inbase.exists():
+        inbase = Notify.get(Notify.cid == cid)
+        Notify.delete_by_id(inbase.id)
+
+    Notify.create(
+        cid=cid,
+        time=update.effective_message.text,
+        res='-'
+    )
+    bot.send_message(
+        cid,
+        '<b>Okay!</b>\n\nIm going to notify You about menu in Mensa every day at {} a.m.\n'
+        'You can use /unsubscribe to stop receiving notifications.'.format(update.effective_message.text),
+        parse_mode=ParseMode.HTML,
+        reply_markup=ReplyKeyboardRemove()
+    )
+
+
+time_h = RegexHandler('^({}|{}|{}|{}|{}|{}|{})'.format('\U000020639:00',
+                                                       '\U000020639:30',
+                                                       '\U0000206310:00',
+                                                       '\U0000206310:30',
+                                                       '\U0000206311:00',
+                                                       '\U0000206311:30',
+                                                       '\U0000206312:00'),
+                      time_handler)
+
+
+@run_async
+def unsub_handler(bot, update):
+    cid = update.effective_message.chat.id
+    inbase = Notify.select().where(Notify.cid == cid)
+    if inbase.exists():
+        inbase = Notify.get(Notify.cid == cid)
+        Notify.delete_by_id(inbase.id)
+        bot.send_message(
+            cid,
+            '<b>You will not be notified about menu in Mensa anymore.</b>\n\n'
+            'Note, that You can always set new notification using /notify',
+            parse_mode=ParseMode.HTML
+        )
+    else:
+        bot.send_message(
+            cid,
+            '<b>Sorry, but it seems like You have no active notifications.</b>\n\n'
+            'Did You set up one?',
+            parse_mode=ParseMode.HTML
+        )
+
+
+unsub_h = CommandHandler('unsubscribe', unsub_handler)
+
+
+@run_async
+def notifier(bot, job):
+    time = str(datetime.datetime.now()).split(' ')[1].split(':')
+    hour = str(int(time[0]) + 2)
+    minute = time[1]
+    time = hour + ':' + minute
+    msg = '<i>Food in Mensa for today:\n\n</i>'
+    today = str(datetime.datetime.today()).split(' ')[0]
+
+    menu = Menu.select().where(Menu.date == today)
+    if menu.exists():
+        menu = Menu.get(Menu.date == today)
+        for title in titles:
+            msg += '<b>{}</b>\n'.format(title)
+            food = list()
+            if titles.index(title) == 0:
+                food = json.loads(menu.tipp)
+            elif titles.index(title) == 1:
+                food = json.loads(menu.komponentenessen)
+            elif titles.index(title) == 2:
+                food = json.loads(menu.beilagen)
+            elif titles.index(title) == 3:
+                food = json.loads(menu.aktionen)
+            elif titles.index(title) == 4:
+                food = json.loads(menu.suppe)
+
+            for sp in food:
+                price = sp.split('|||')[1].split('/')[0]
+                msg += '{} - <code>{}</code>\n'.format(sp.split('|||')[0], price)
+            msg += '\n  '
+    else:
+        menu = Menu.create(date=today)
+        food = get_mensa()
+        for elem in food:
+            msg += '<b>{}</b>\n'.format(elem)
+
+            for sp in food.get(elem):
+                price = sp.split('|||')[1].split('/')[0]
+                if elem in titles:
+                    if elem == titles[0]:
+                        f = json.loads(menu.tipp)
+                        f.append(sp)
+                        menu.tipp = json.dumps(f)
+                    elif elem == titles[1]:
+                        f = json.loads(menu.komponentenessen)
+                        f.append(sp)
+                        menu.komponentenessen = json.dumps(f)
+                    elif elem == titles[2]:
+                        f = json.loads(menu.beilagen)
+                        f.append(sp)
+                        menu.beilagen = json.dumps(f)
+                    elif elem == titles[3]:
+                        f = json.loads(menu.aktionen)
+                        f.append(sp)
+                        menu.aktionen = json.dumps(f)
+                    elif elem == titles[4]:
+                        f = json.loads(menu.suppe)
+                        f.append(sp)
+                        menu.suppe = json.dumps(f)
+                    else:
+                        f = json.loads(menu.extra)
+                        f.append(sp)
+                        menu.extra = json.dumps(f)
+                menu.save()
+                msg += '{} - <code>{}</code>\n'.format(sp.split('|||')[0], price)
+
+            msg += '\n'
+        menu.save()
+
+    for chat in Notify.select().where(Notify.time == time):
+        bot.send_message(
+            chat.cid,
+            '<code>Good morning!</code>',
+            parse_mode=ParseMode.HTML
+        )
+        bot.send_message(
+            chat.cid,
+            msg,
+            parse_mode=ParseMode.HTML
+        )
+
 
     
 

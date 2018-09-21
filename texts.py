@@ -8,6 +8,8 @@ To get list of supported commands use /help .'''
 help_phrase = '''<b>List of supported commands:</b>
 /mensa - Get menu in RUBMensa for today
 /tomorrow - Get menu in RUBMensa for tomorrow
+/notify - Subscribe for daily notifications
+/unsubscribe - Unsubscribe of daily notifications
 /explain - Get explanations for Mensa menu
 /times - Get opening hours of Mensa
 /map - Get map of RUB
