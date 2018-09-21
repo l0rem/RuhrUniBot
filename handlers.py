@@ -341,7 +341,7 @@ def source_handler(bot, update):
     bot.send_message(
         cid,
         '''This bot was written by @Lor3m in <code>Python3</code> with <code>python-telegram-bot</code>.
-You can find soucre code on GitHub.''',
+You can find source code on GitHub.''',
         parse_mode=ParseMode.HTML,
         reply_markup=markup
     )
