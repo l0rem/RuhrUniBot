@@ -49,7 +49,7 @@ def mensa_handler(bot, update):
             for sp in food:
                 price = sp.split('|||')[1].split('/')[0]
                 msg += '{} - <code>{}</code>\n'.format(sp.split('|||')[0], price)
-            msg += '\n  '
+            msg += '\n'
     else:
         menu = Menu.create(date=today)
         food = get_mensa()
@@ -322,7 +322,7 @@ def notify_handler(bot, update):
     if cid < 0:
         bot.send_message(
             cid,
-            '<b>Sorry, but You cant use this command in groups atm.</b>'
+            '<b>Sorry, but You cant use this command in groups atm.</b>\n'
             'Stay tuned.',
             parse_mode=ParseMode.HTML
         )
