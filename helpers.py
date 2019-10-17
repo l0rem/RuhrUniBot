@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 
 
 def get_mensa(link='https://el.rub.de/mobile/mensa/'):
-    r = requests.get(link)
+    r = requests.get(link, verify=False)
     soup = BeautifulSoup(r.text, 'html.parser')
     essen = soup.find('div', id='alles')
     divs = essen.find_all('div')
@@ -35,5 +35,3 @@ def get_cid(update: Update):
 def get_uid(update: Update):
 
     return update.effective_message.from_user.id
-
-print(get_mensa())
