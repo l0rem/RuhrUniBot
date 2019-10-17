@@ -1,20 +1,15 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from telegram.ext import run_async
-from telegram.ext import CommandHandler, RegexHandler
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
-from telegram import ParseMode
+from telegram.ext import run_async, CommandHandler, MessageHandler, Filters
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup,\
+    ReplyKeyboardRemove, ParseMode
 import datetime
-import requests
 from dbmodels import *
+from helpers import get_mensa
 import json
-from texts import *
-from bs4 import BeautifulSoup
+from texts import titles, times, explanation, start_phrase, help_phrase
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -24,7 +19,7 @@ def error(bot, update, err):
 
 
 @run_async
-def mensa_handler(bot, update):
+def mensa_callback(update, context):
     cid = update.effective_message.chat.id
     msg = '<i>Food in Mensa for today:\n\n</i>'
     today = str(datetime.datetime.today()).split(' ')[0]
@@ -88,38 +83,18 @@ def mensa_handler(bot, update):
 
             msg += '\n'
         menu.save()
-    bot.send_message(
+    context.bot.send_message(
         cid,
         msg,
         parse_mode=ParseMode.HTML
     )
 
 
-mensa_h = CommandHandler('mensa', mensa_handler)
+mensa_handler = CommandHandler(command='mensa',
+                               callback=mensa_callback)
 
 
-def get_mensa(link='https://el.rub.de/mobile/mensa/'):
-    r = requests.get(link)
-    soup = BeautifulSoup(r.text, 'html.parser')
-    essen = soup.find('div', id='alles')
-    divs = essen.find_all('div')
-    types = list()
-    food = list()
 
-    for div in divs:
-        if div['id'] == 'head':
-            types.append(div.next.next)
-            food.append(list())
-        elif div['id'] == 'content':
-            price = div.find('br').next
-            food[-1].append(div.next + '|||' + price)
-    end = dict()
-    for t in types:
-        l = list()
-        for f in food[types.index(t)]:
-            l.append(f)
-        end.update({t: l})
-    return end
 
 
 @run_async
@@ -376,14 +351,14 @@ def time_handler(bot, update):
     )
 
 
-time_h = RegexHandler('^({}|{}|{}|{}|{}|{}|{})'.format('\U000020639:00',
-                                                       '\U000020639:30',
-                                                       '\U0000206310:00',
-                                                       '\U0000206310:30',
-                                                       '\U0000206311:00',
-                                                       '\U0000206311:30',
-                                                       '\U0000206312:00'),
-                      time_handler)
+time_h = MessageHandler(filters=Filters.regex('^({}|{}|{}|{}|{}|{}|{})'.format('\U000020639:00',
+                                                                               '\U000020639:30',
+                                                                               '\U0000206310:00',
+                                                                               '\U0000206310:30',
+                                                                               '\U0000206311:00',
+                                                                               '\U0000206311:30',
+                                                                               '\U0000206312:00')),
+                        callback=time_handler)
 
 
 @run_async
