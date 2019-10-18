@@ -1,40 +1,21 @@
-# -*- coding: utf-8 -*-
-
 from peewee import *
+from playhouse.db_url import connect
+from decouple import config
 
-db = SqliteDatabase(                                            # initializing database instance
-    'base.db'
-)
+db_proxy = Proxy()
+db = connect(config('DATABASE_URL', default='sqlite:///RUBdb.sqlite', cast=str), autorollback=True)
+db_proxy.initialize(db)
 
 
-class Menu(Model):                                              # creating db-model for food menu
-    date = TextField()
-    tipp = TextField(default='[]')
-    komponentenessen = TextField(default='[]')
-    beilagen = TextField(default='[]')
-    aktionen = TextField(default='[]')
-    suppe = TextField(default='[]')
-    extra = TextField(default='[]')
+class User(Model):
+    uid = BigIntegerField()
+    username = CharField(null=True)
+    joined_on = DateTimeField()
 
     class Meta:
         database = db
-        table_name = 'Menus'
 
 
-class Subdata(Model):                                           # creating db-model for additional data
-    name = TextField()
-    fid = TextField()
-
-    class Meta:
-        database = db
-        table_name = 'Subdata'
-
-
-class Notify(Model):
-    cid = IntegerField()                                        # creating db-model for notifications
-    time = TextField()
-    res = TextField()
-
-    class Meta:
-        database = db
-        table_name = 'Notifications'
+def check_tables():
+    if not User.table_exists():
+        User.create_table()

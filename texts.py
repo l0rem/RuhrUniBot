@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-start_phrase = '''<b>Hey!\n</b>This is bot for Ruhr University of Bochum. 
-Its alternative to RUB Mobile und rub.de .
-To get list of supported commands use /help .'''
-
 
 help_phrase = '''<b>List of supported commands:</b>
 /mensa - Get menu in RUBMensa for today

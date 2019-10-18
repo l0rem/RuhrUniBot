@@ -1,23 +1,5 @@
-# -*- coding: utf-8 -*-
 
-import logging
-from telegram.ext import run_async, CommandHandler, MessageHandler, Filters
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup,\
-    ReplyKeyboardRemove, ParseMode
-import datetime
-from dbmodels import *
-from helpers import get_mensa
-import json
-from texts import titles, times, explanation, start_phrase, help_phrase
-
-logger = logging.getLogger(__name__)
-
-
-@run_async
-def error(bot, update, err):
-    logger.warning('Update "%s" caused error "%s"', update, err)
-
-
+'''
 @run_async
 def mensa_callback(update, context):
     cid = update.effective_message.chat.id
@@ -98,72 +80,62 @@ mensa_handler = CommandHandler(command='mensa',
 
 
 @run_async
-def times_handler(bot, update):
+def times_handler(update, context):
     cid = update.effective_message.chat.id
-    bot.send_message(
+    context.bot.send_message(
         cid,
         times,
         parse_mode=ParseMode.HTML
     )
 
 
-times_h = CommandHandler('times', times_handler)
+times_handler = CommandHandler('times', times_handler)
 
 
 @run_async
-def explain_handler(bot, update):
+def explain_handler(update, context):
     cid = update.effective_message.chat.id
-    bot.send_message(
+    context.bot.send_message(
         cid,
         explanation,
         parse_mode=ParseMode.HTML
     )
 
 
-explain_h = CommandHandler('explain', explain_handler)
+explain_handler = CommandHandler('explain', explain_handler)
 
 
-@run_async
-def start_handler(bot, update):
-    cid = update.effective_message.chat.id
-    bot.send_message(
-        cid,
-        start_phrase,
-        parse_mode=ParseMode.HTML
-    )
 
-
-start_h = CommandHandler('start', start_handler)
 
 
 @run_async
-def help_handler(bot, update):
+def help_callback(update, context):
     cid = update.effective_message.chat.id
-    bot.send_message(
+    context.bot.send_message(
         cid,
         help_phrase,
         parse_mode=ParseMode.HTML
     )
 
 
-help_h = CommandHandler('help', help_handler)
+help_handler = CommandHandler('help', help_callback)
 
 
 @run_async
-def map_handler(bot, update):
+def map_callback(update, context):
     cid = update.effective_message.chat.id
     mp = Subdata.select().where(Subdata.name == 'map')
 
     if mp.exists():
         mp = Subdata.get(Subdata.name == 'map')
         fid = mp.fid
-        bot.send_photo(
+        context.bot.send_photo(
             cid,
             fid,
             caption='By @RuhrUniBot'
         )
     else:
-        m = bot.send_photo(
+        m = context.bot.send_photo(
             cid,
             'https://www.ruhr-uni-bochum.de/anreise/images/RUB-Lageplan_en-1200.jpg',
             caption='By @RuhrUniBot'
@@ -175,24 +147,24 @@ def map_handler(bot, update):
         )
 
 
-map_h = CommandHandler('map', map_handler)
+map_handler = CommandHandler('map', map_callback)
 
 
 @run_async
-def fristenw_handler(bot, update):
+def fristenw_handler(update, context):
     cid = update.effective_message.chat.id
     msg = '<b>Fristen for Wintersemester</b>'
     fristen_w = Subdata.select().where(Subdata.name == 'fristen_w')
     if fristen_w.exists():
         fristen_w = Subdata.get(Subdata.name == 'fristen_w')
-        bot.send_document(
+        context.bot.send_document(
             cid,
             fristen_w.fid,
             caption=msg,
             parse_mode=ParseMode.HTML
         )
     else:
-        m = bot.send_document(
+        m = context.bot.send_document(
             cid,
             'https://www.ruhr-uni-bochum.de/imperia/md/content/dezergba/studierendensekretariat/fristen_2017_2.pdf',
             caption=msg,
@@ -205,25 +177,25 @@ def fristenw_handler(bot, update):
         )
 
 
-fristenw_h = CommandHandler('fristen_w', fristenw_handler)
+fristenw_handler = CommandHandler('fristen_w', fristenw_handler)
 
 
 @run_async
-def fristens_handler(bot, update):
+def fristens_handler(update, context):
     cid = update.effective_message.chat.id
     msg = '<b>Fristen for Sommersemester</b>'
     fristen_s = Subdata.select().where(Subdata.name == 'fristen_s')
 
     if fristen_s.exists():
         fristen_s = Subdata.get(Subdata.name == 'fristen_s')
-        bot.send_document(
+        context.bot.send_document(
             cid,
             fristen_s.fid,
             caption=msg,
             parse_mode=ParseMode.HTML
         )
     else:
-        m = bot.send_document(
+        m = context.bot.send_document(
             cid,
             'https://www.ruhr-uni-bochum.de/imperia/md/content/dezergba/studierendensekretariat/fristen20181.pdf',
             caption=msg,
@@ -236,15 +208,15 @@ def fristens_handler(bot, update):
         )
 
 
-fristens_h = CommandHandler('fristen_s', fristens_handler)
+fristens_handler = CommandHandler('fristen_s', fristens_handler)
 
 
 @run_async
-def tomorrow_handler(bot, update):
+def tomorrow_handler(update, context):
     cid = update.effective_message.chat.id
     weekday = datetime.datetime.today().weekday()
     if weekday >= 5:
-        bot.send_message(
+        context.bot.send_message(
             cid,
             '<code>Hey there!</code>\nTheres no food for tomorrow :(',
             parse_mode=ParseMode.HTML
@@ -264,38 +236,38 @@ def tomorrow_handler(bot, update):
             msg += '{} - <code>{}</code>\n'.format(sp.split('|||')[0], price)
         msg += '\n'
 
-    bot.send_message(
+    context.bot.send_message(
         cid,
         msg,
         parse_mode=ParseMode.HTML
     )
 
 
-tomorrow_h = CommandHandler('tomorrow', tomorrow_handler)
+tomorrow_handler = CommandHandler('tomorrow', tomorrow_handler)
 
 
 @run_async
-def source_handler(bot, update):
+def source_handler(update, context):
     cid = update.effective_message.chat.id
     button = InlineKeyboardButton('GitHub', url='https://github.com/l0rem/RuhrUniBot')
     markup = InlineKeyboardMarkup([[button]])
-    bot.send_message(
+    context.bot.send_message(
         cid,
-        '''This bot was written by @Lor3m in <code>Python3</code> with <code>python-telegram-bot</code>.
-You can find source code on GitHub.''',
+        This bot was written by @Lor3m in <code>Python3</code> with <code>python-telegram-bot</code>.
+You can find source code on GitHub.,
         parse_mode=ParseMode.HTML,
         reply_markup=markup
     )
 
 
-source_h = CommandHandler('source', source_handler)
+source_handler = CommandHandler('source', source_handler)
 
 
 @run_async
-def notify_handler(bot, update):
+def notify_handler(update, context):
     cid = update.effective_message.chat.id
     if cid < 0:
-        bot.send_message(
+        context.bot.send_message(
             cid,
             '<b>Sorry, but You cant use this command in groups atm.</b>\n'
             'Stay tuned.',
@@ -317,7 +289,7 @@ def notify_handler(bot, update):
                                   [button6]],
                                  resize_keyboard=True,
                                  one_time_keyboard=True)
-        bot.send_message(
+        context.bot.send_message(
             cid,
             '<b>When would You like to receive notifications about todays menu?</b>\n\n'
             'Note, that Tagessuppe and Tipp des Tagges appear at about 10:30 - 10:40 a.m.',
@@ -326,11 +298,11 @@ def notify_handler(bot, update):
         )
 
 
-notify_h = CommandHandler('notify', notify_handler)
+notify_handler = CommandHandler('notify', notify_handler)
 
 
 @run_async
-def time_handler(bot, update):
+def time_handler(update, context):
     cid = update.effective_message.chat.id
     inbase = Notify.select().where(Notify.cid == cid)
     if inbase.exists():
@@ -342,7 +314,7 @@ def time_handler(bot, update):
         time=update.effective_message.text,
         res='-'
     )
-    bot.send_message(
+    context.bot.send_message(
         cid,
         '<b>Okay!</b>\n\nIm going to notify You about menu in Mensa every day at {} a.m.\n'
         'You can use /unsubscribe to stop receiving notifications.'.format(update.effective_message.text),
@@ -351,7 +323,7 @@ def time_handler(bot, update):
     )
 
 
-time_h = MessageHandler(filters=Filters.regex('^({}|{}|{}|{}|{}|{}|{})'.format('\U000020639:00',
+time_handler = MessageHandler(filters=Filters.regex('^({}|{}|{}|{}|{}|{}|{})'.format('\U000020639:00',
                                                                                '\U000020639:30',
                                                                                '\U0000206310:00',
                                                                                '\U0000206310:30',
@@ -362,7 +334,7 @@ time_h = MessageHandler(filters=Filters.regex('^({}|{}|{}|{}|{}|{}|{})'.format('
 
 
 @run_async
-def unsub_handler(bot, update):
+def unsub_handler(update, context):
     cid = update.effective_message.chat.id
     inbase = Notify.select().where(Notify.cid == cid)
     if inbase.exists():
@@ -375,7 +347,7 @@ def unsub_handler(bot, update):
             parse_mode=ParseMode.HTML
         )
     else:
-        bot.send_message(
+        context.bot.send_message(
             cid,
             '<b>Sorry, but it seems like You have no active notifications.</b>\n\n'
             'Did You set up one?',
@@ -383,11 +355,11 @@ def unsub_handler(bot, update):
         )
 
 
-unsub_h = CommandHandler('unsubscribe', unsub_handler)
+unsub_handler = CommandHandler('unsubscribe', unsub_handler)
 
 
 @run_async
-def notifier(bot, job):
+def notifier(job):
     time = str(datetime.datetime.now()).split(' ')[1].split(':')
     hour = str(int(time[0]) + 2)
     minute = time[1]
@@ -466,6 +438,7 @@ def notifier(bot, job):
             msg,
             parse_mode=ParseMode.HTML
         )
+'''
 
 
     
