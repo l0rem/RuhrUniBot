@@ -5,7 +5,7 @@ import datetime
 url = 'https://www.akafoe.de/gastronomie/speiseplaene-der-mensen/ruhr-universitaet-bochum'
 
 
-def parse_mensa(date='today'):
+def parse_mensa(date=None):
     data = requests.get(url).text
 
     soup = BeautifulSoup(data,
@@ -15,24 +15,31 @@ def parse_mensa(date='today'):
 
     datespan = data.find('h3').next.split(' ')[1].split('.')
     start_date = datetime.date(int(datespan[-1]), int(datespan[1]), int(datespan[0]))
-    print(start_date.weekday())
     allowed_dates = list()
-
-    for i in range(10):
-        print(i)
-
+    allowed_dates.append(start_date)
+    k = 0
+    for i in range(1, 14):
+        try:
+            d = datetime.date(int(datespan[-1]), int(datespan[1]), int(datespan[0]) + i)
+        except ValueError:
+            if k == 0:
+                d = datetime.date(int(datespan[-1]), int(datespan[1]) + 1, 1)
+                k = i - 1
+            else:
+                d = datetime.date(int(datespan[-1]), int(datespan[1]) + 1, i - k)
+        if d.weekday() <= 4:
+            allowed_dates.append(d)
 
     sections = data.find_all('div', class_='col-md-6')
 
-    if date is 'today':
-        today = int(str(datetime.datetime.today()).split(' ')[0].split('-')[-1])
+    if date is None:
+        day_needed = datetime.datetime.today().date()
     else:
-        today = date
-
-    if today >= datespan[0]:
-        dist = (today - datespan[0]) * 2
+        day_needed = datetime.date(int(date.split('-')[0]), int(date.split('-')[1]), int(date.split('-')[2]))
+    if day_needed not in allowed_dates:
+        return False
     else:
-        dist = (datespan[1] - today) * 2
+        dist = allowed_dates.index(day_needed) * 2
 
     dishes = (str(sections[dist]) + str(sections[dist + 1])).split('<hr/>')
     data = dict()
@@ -52,6 +59,6 @@ def parse_mensa(date='today'):
     return data
 
 
-print(parse_mensa())
+
 
 
