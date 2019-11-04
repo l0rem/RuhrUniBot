@@ -5,7 +5,7 @@ import datetime
 url = 'https://www.akafoe.de/gastronomie/speiseplaene-der-mensen/ruhr-universitaet-bochum'
 
 
-def parse_mensa(date=None):
+def parse_mensa(date=None, return_dates=False):
     data = requests.get(url).text
 
     soup = BeautifulSoup(data,
@@ -29,6 +29,9 @@ def parse_mensa(date=None):
                 d = datetime.date(int(datespan[-1]), int(datespan[1]) + 1, i - k)
         if d.weekday() <= 4:
             allowed_dates.append(d)
+
+    if return_dates:
+        return allowed_dates
 
     sections = data.find_all('div', class_='col-md-6')
 
