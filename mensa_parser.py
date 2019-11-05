@@ -5,7 +5,7 @@ import datetime
 url = 'https://www.akafoe.de/gastronomie/speiseplaene-der-mensen/ruhr-universitaet-bochum'
 
 
-def parse_mensa(date=None):
+def parse_mensa(date=None, return_dates=False):
     data = requests.get(url).text
 
     soup = BeautifulSoup(data,
@@ -17,6 +17,7 @@ def parse_mensa(date=None):
     start_date = datetime.date(int(datespan[-1]), int(datespan[1]), int(datespan[0]))
     allowed_dates = list()
     allowed_dates.append(start_date)
+
     k = 0
     for i in range(1, 14):
         try:
@@ -40,6 +41,9 @@ def parse_mensa(date=None):
         return False
     else:
         dist = allowed_dates.index(day_needed) * 2
+
+    if return_dates:
+        return allowed_dates
 
     dishes = (str(sections[dist]) + str(sections[dist + 1])).split('<hr/>')
     data = dict()

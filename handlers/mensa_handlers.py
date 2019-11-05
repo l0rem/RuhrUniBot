@@ -4,12 +4,28 @@ from helpers import get_cid
 from keyboards.common_keyboards import back_keyboard, main_menu_buttons
 from .common_handlers import back_to_menu_handler
 from phrases.mensa_phrases import mensa_menu_phrase, wait_phrase
-from keyboards.mensa_keyboards import days_buttons
+from keyboards.mensa_keyboards import days_buttons, today_buttons
 from mensa_parser import parse_mensa
 import datetime
 from calendar import monthrange
 
 WATCHING_MENU = range(1)
+
+
+def gen_menu_text(food):
+    message_text = ''
+
+    for part in food:
+        message_text += '<b>{}:</b>\n'.format(part)
+        dishes = food.get(part)
+        for dish in dishes:
+            title = dish[0]
+            tags = dish[1]
+            price = dish[2]
+            message_text += '<code>{}</code>\n<i>{} - {}</i>\n'.format(title, tags, price)
+        message_text += '\n'
+
+    return message_text
 
 
 def mensa_callback(update, context):
@@ -26,17 +42,7 @@ def mensa_callback(update, context):
                                          parse_mode=ParseMode.HTML).message_id)
 
     food = parse_mensa()
-    message_text = ''
-
-    for part in food:
-        message_text += '<b>{}:</b>\n'.format(part)
-        dishes = food.get(part)
-        for dish in dishes:
-            title = dish[0]
-            tags = dish[1]
-            price = dish[2]
-            message_text += '<code>{}</code>\n<i>{} - {}</i>\n'.format(title, tags, price)
-        message_text += '\n'
+    message_text = gen_menu_text(food)
 
     previous_button = InlineKeyboardButton(text=days_buttons[0],
                                            callback_data='prev')
@@ -60,27 +66,58 @@ def mensa_callback(update, context):
 
 def days_callback(update, context):
     data = update.callback_query.data
+    cid = update.callback_query.from_user.id
+    mids = context.chat_data['message_ids']
 
     allowed_dates = parse_mensa(return_dates=True)
     today = datetime.datetime.today().date()
     if today in allowed_dates:
-        previous_day = allowed_dates.index(today) - 1
-        next_day = allowed_dates.index(today) + 1
+        previous_day = str(allowed_dates[allowed_dates.index(today) - 1])
+        next_day = str(allowed_dates[allowed_dates.index(today) + 1])
     else:
+        print('nothing...')
+        days = monthrange(int(str(today).split('-')[0]), int(str(today).split('-')[1]))
+        days = str(days).replace(' ', '').replace(')', '').replace('(', '').split(',')[1]
+        today = str(today).split('-')
+        day = int(today)[-1]
         for i in range(1, 4):
-            nex
+            prev_day = day - i
+            print(prev_day)
+            date = datetime.date()
+        return
+
+    previous_button = InlineKeyboardButton(text=today_buttons[0],
+                                           callback_data='today')
+    next_button = InlineKeyboardButton(text=today_buttons[1],
+                                       callback_data='today')
 
     if data == 'next':
-        pass
+        food = parse_mensa(date=next_day)
+        days_kb = InlineKeyboardMarkup([[previous_button]])
     elif data == 'prev':
-        pass
+        food = parse_mensa(date=previous_day)
+        days_kb = InlineKeyboardMarkup([[next_button]])
     else:
-        mensa_callback(update, context)
+        food = parse_mensa()
+        previous_button = InlineKeyboardButton(text=days_buttons[0],
+                                               callback_data='prev')
+        next_button = InlineKeyboardButton(text=days_buttons[1],
+                                           callback_data='next')
+        days_kb = InlineKeyboardMarkup([[previous_button, next_button]])
+
+    message_text = gen_menu_text(food)
+
+    mid = mids[-1]
+    context.bot.edit_message_text(chat_id=cid,
+                                  message_id=mid,
+                                  text=message_text,
+                                  reply_markup=days_kb,
+                                  parse_mode=ParseMode.HTML)
 
     return WATCHING_MENU
 
 
-days_handler = CallbackQueryHandler(pattern='^({}|{})'.format('prev', 'next'),
+days_handler = CallbackQueryHandler(pattern='^({}|{}|{})'.format('prev', 'next', 'today'),
                                     callback=days_callback)
 
 mensa_handler = MessageHandler(filters=Filters.regex(main_menu_buttons[0]),
