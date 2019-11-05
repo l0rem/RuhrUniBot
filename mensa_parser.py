@@ -31,6 +31,9 @@ def parse_mensa(date=None, return_dates=False):
         if d.weekday() <= 4:
             allowed_dates.append(d)
 
+    if return_dates:
+        return allowed_dates
+
     sections = data.find_all('div', class_='col-md-6')
 
     if date is None:
