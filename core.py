@@ -10,7 +10,7 @@ from dbmodels import check_tables
 from decouple import config
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.getLevelName(config('LOG_LEVEL', default='DEBUG')))
+                    level=logging.getLevelName(config('LOG_LEVEL', default='INFO')))
 
 bot_token = config('BOT_TOKEN', default='token')
 
