@@ -1,5 +1,5 @@
 from telegram.ext import Updater
-from handlers.common_handlers import start_handler
+from handlers.common_handlers import start_handler, back_to_menu_handler
 from handlers.map_handlers import map_conversation
 from handlers.schedule_handlers import schedule_conversation
 from handlers.notifications_handlers import notifications_conversation
@@ -29,5 +29,6 @@ if __name__ == '__main__':
     dp.add_handler(notifications_conversation)
     dp.add_handler(help_conversation)
     dp.add_handler(mensa_conversation)
+    dp.add_handler(back_to_menu_handler)
 
     upd.start_polling()

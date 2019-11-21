@@ -2,11 +2,17 @@ import requests
 from bs4 import BeautifulSoup
 import datetime
 
-url = 'https://www.akafoe.de/gastronomie/speiseplaene-der-mensen/ruhr-universitaet-bochum'
+url_mensa = 'https://www.akafoe.de/gastronomie/speiseplaene-der-mensen/ruhr-universitaet-bochum'
+url_qwest = 'https://www.akafoe.de/gastronomie/speiseplaene-der-mensen/q-west'
 
 
-def parse_mensa(date=None, return_dates=False):
-    data = requests.get(url).text
+def parse_food(date=None, return_dates=False, target='mensa'):
+    if target == 'mensa':
+        data = requests.get(url_mensa).text
+    elif target == 'qwest':
+        data = requests.get(url_qwest).text
+    else:
+        return 404
 
     soup = BeautifulSoup(data,
                          features='html.parser')
